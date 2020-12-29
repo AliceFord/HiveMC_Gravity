@@ -36,23 +36,43 @@ class Table(QTableWidget):
 		self.setData()
 		self.resizeColumnsToContents()
 		self.resizeRowsToContents()
-		self.setFixedSize(400, 600)
+		self.resize(400, 600)
 		self.setWindowFlags(Qt.Window | Qt.WindowStaysOnTopHint)
 		self.setWindowTitle("HiveMC Gravity Speedrun Tool")
 
 	def setData(self):
 		self.setHorizontalHeaderLabels(['You', 'WR', 'Difference'])
 		self.setVerticalHeaderLabels([formatHeading(heading) for heading in HEADINGS])
+		finalData = [{heading: "" for heading in HEADINGS}, {heading: "" for heading in HEADINGS}, {heading: "" for heading in HEADINGS}]
 		for key, value in self.playerData.items():
 			try:
-				self.setItem(HEADINGS.index(key), 0, QTableWidgetItem(formatTime(value)))
-			except ValueError:
+				finalData[0][key] = formatTime(value)
+			except KeyError:
 				pass
 		for key, value in self.WRData.items():
 			try:
-				self.setItem(HEADINGS.index(key), 1, QTableWidgetItem(value))
-			except ValueError:
+				finalData[1][key] = value
+			except KeyError:
 				pass
+		for key in HEADINGS:
+			try:
+				finalData[2][key] = self.differenceOfTimes(finalData[0][key], finalData[1][key])
+			except KeyError:
+				pass
+		for key in HEADINGS:
+			self.setItem(HEADINGS.index(key), 0, QTableWidgetItem(finalData[0][key]))
+			self.setItem(HEADINGS.index(key), 1, QTableWidgetItem(finalData[1][key]))
+			self.setItem(HEADINGS.index(key), 2, QTableWidgetItem(finalData[2][key]))
+
+	def differenceOfTimes(self, playerTime, wrTime):
+		if wrTime != "" and playerTime != "":
+			return formatTime(self.parseTime(wrTime) - self.parseTime(playerTime))
+		else:
+			return ""
+
+	@staticmethod
+	def parseTime(time: str):
+		return int(time.replace(":", ""))
 
 	@staticmethod
 	def getPlayerData(name):
