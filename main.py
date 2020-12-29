@@ -2,6 +2,7 @@ import sys
 
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
+from PyQt5.QtGui import *
 import requests
 
 HEADINGS = ['AIRWAYS', 'AQUAMARINE', 'ARACHNOPHOBIA', 'ARCANE', 'ARCTIC', 'ASTEROID', 'AVALANCHE', 'BEEHIVE', 'BLOCKS', 'BOUNCE', 'CARS', 'CLOCKWORK', 'COLORS', 'COMET', 'CPU', 'DEEPER_AND_DEEPER', 'DEEP_SEA', 'DNA', 'DRAIN', 'ESCHER', 'FACTORY', 'FASTFOOD', 'FLOATLANDS', 'FUTURISTIC', 'GLITCH', 'GOLD_MINE', 'GOLD_RUSH', 'GRAVIBEE', 'GRAVITY_SPIRE', 'GREEN_HILL', 'HELL', 'HIGHWAY', 'HORROR', 'HYPNOSIS', 'KODIINTHUR', 'LAB', 'LANTERNS', 'LIBRARY', 'LUSH', 'MAGIC', 'MERIDIAN_TRENCH', 'METEOR', 'MINE', 'MOBS', 'NARNIA', 'NIGHTMARE', 'OCEAN', 'ORE', 'OVERGROWN', 'PACMAN', 'PANDA', 'PIPE', 'PIRATES', 'PIXEL', 'PLANTS', 'PRESENTS', 'PYRAMID', 'RAIN', 'REFLECTION', 'RHYTHM', 'RUINS', 'SHACKLED', 'SHAKER', 'SHROOMS', 'SPEARS', 'SWEETTOOTH', 'TETRIS', 'TOYS', 'TRAFFIC', 'TREES', 'TREETOP', 'TRON', 'VALFORD', 'VOLCANO', 'WARFARE', 'WAVE', 'WONDERLAND']
@@ -39,36 +40,45 @@ class Table(QTableWidget):
 		self.resize(400, 600)
 		self.setWindowFlags(Qt.Window | Qt.WindowStaysOnTopHint)
 		self.setWindowTitle("HiveMC Gravity Speedrun Tool")
+		self.finalData = []
 
 	def setData(self):
 		self.setHorizontalHeaderLabels(['You', 'WR', 'Difference'])
 		self.setVerticalHeaderLabels([formatHeading(heading) for heading in HEADINGS])
-		finalData = [{heading: "" for heading in HEADINGS}, {heading: "" for heading in HEADINGS}, {heading: "" for heading in HEADINGS}]
+		self.finalData = [{heading: "" for heading in HEADINGS}, {heading: "" for heading in HEADINGS}, {heading: "" for heading in HEADINGS}]
 		for key, value in self.playerData.items():
 			try:
-				finalData[0][key] = formatTime(value)
+				self.finalData[0][key] = formatTime(value)
 			except KeyError:
 				pass
 		for key, value in self.WRData.items():
 			try:
-				finalData[1][key] = value
+				self.finalData[1][key] = value
 			except KeyError:
 				pass
 		for key in HEADINGS:
 			try:
-				finalData[2][key] = self.differenceOfTimes(finalData[0][key], finalData[1][key])
+				self.finalData[2][key] = self.differenceOfTimes(self.finalData[0][key], self.finalData[1][key])
 			except KeyError:
 				pass
 		for key in HEADINGS:
-			self.setItem(HEADINGS.index(key), 0, QTableWidgetItem(finalData[0][key]))
-			self.setItem(HEADINGS.index(key), 1, QTableWidgetItem(finalData[1][key]))
-			self.setItem(HEADINGS.index(key), 2, QTableWidgetItem(finalData[2][key]))
+			self.setItem(HEADINGS.index(key), 0, QTableWidgetItem(self.finalData[0][key]))
+			self.setItem(HEADINGS.index(key), 1, QTableWidgetItem(self.finalData[1][key]))
+			self.setItem(HEADINGS.index(key), 2, QTableWidgetItem(self.finalData[2][key]))
 
 	def differenceOfTimes(self, playerTime, wrTime):
 		if wrTime != "" and playerTime != "":
-			return formatTime(self.parseTime(wrTime) - self.parseTime(playerTime))
+			return formatTime(self.parseTime(playerTime) - self.parseTime(wrTime))
 		else:
 			return ""
+
+	def refresh(self):
+		self.playerData = self.getPlayerData(self.name)
+		for key, value in self.playerData.items():
+			try:
+				self.setItem(HEADINGS.index(key), 0, QTableWidgetItem(formatTime(value)))
+			except KeyError:
+				pass
 
 	@staticmethod
 	def parseTime(time: str):
@@ -98,10 +108,20 @@ class Table(QTableWidget):
 		return wrData
 
 
+def refreshClicked():
+	global table
+	table.refresh()
+
+
 def main(args):
+	global table
 	app = QApplication(args)
 	table = Table(len(HEADINGS), 3)
 	table.show()
+	b1 = QPushButton(table)
+	b1.setText("Refresh Stats")
+	b1.clicked.connect(refreshClicked)
+	b1.show()
 	sys.exit(app.exec_())
 
 
