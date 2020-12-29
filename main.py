@@ -108,6 +108,32 @@ class Table(QTableWidget):
 		return wrData
 
 
+class MainWindow(QMainWindow):
+	def __init__(self, *args, **kwargs):
+		super().__init__()
+		self.initUI()
+
+	def initUI(self):
+		table = Table(len(HEADINGS), 3)
+		table.show()
+		self.setCentralWidget(table)
+
+		exitAct = QAction(QIcon('exit.png'), '&Exit', self)
+		exitAct.setShortcut('Ctrl+Q')
+		exitAct.setStatusTip('Exit application')
+		exitAct.triggered.connect(qApp.quit)
+
+		self.statusBar()
+
+		menubar = self.menuBar()
+		fileMenu = menubar.addMenu('&File')
+		fileMenu.addAction(exitAct)
+
+		self.move(300, 150)
+		self.setWindowTitle('PyQt window')
+		self.show()
+
+
 def refreshClicked():
 	global table
 	table.refresh()
@@ -116,12 +142,13 @@ def refreshClicked():
 def main(args):
 	global table
 	app = QApplication(args)
-	table = Table(len(HEADINGS), 3)
-	table.show()
-	b1 = QPushButton(table)
-	b1.setText("Refresh Stats")
-	b1.clicked.connect(refreshClicked)
-	b1.show()
+	# table = Table(len(HEADINGS), 3)
+	# table.show()
+	# b1 = QPushButton(table)
+	# b1.setText("Refresh Stats")
+	# b1.clicked.connect(refreshClicked)
+	# b1.show()
+	_ = MainWindow()
 	sys.exit(app.exec_())
 
 
