@@ -37,9 +37,6 @@ class Table(QTableWidget):
 		self.setData()
 		self.resizeColumnsToContents()
 		self.resizeRowsToContents()
-		self.resize(400, 600)
-		self.setWindowFlags(Qt.Window | Qt.WindowStaysOnTopHint)
-		self.setWindowTitle("HiveMC Gravity Speedrun Tool")
 		self.finalData = []
 
 	def setData(self):
@@ -58,17 +55,28 @@ class Table(QTableWidget):
 				pass
 		for key in HEADINGS:
 			try:
-				self.finalData[2][key] = self.differenceOfTimes(self.finalData[0][key], self.finalData[1][key])
+				timeDifference = self.differenceOfTimes(self.finalData[0][key], self.finalData[1][key])
+				self.finalData[2][key] = QTableWidgetItem(formatTime(timeDifference))
+				if timeDifference != "":
+					if timeDifference < 0:
+						self.finalData[2][key].setBackground(QColor(191, 255, 0))  # Gold
+					elif 0 <= timeDifference < 1000:
+						self.finalData[2][key].setBackground(QColor(0, 128, 0))  # Green
+					elif 1000 <= timeDifference < 2000:
+						self.finalData[2][key].setBackground(QColor(255, 115, 0))  # Amber
+					else:
+						self.finalData[2][key].setBackground(QColor(255, 0, 0))  # Red
+
 			except KeyError:
 				pass
 		for key in HEADINGS:
 			self.setItem(HEADINGS.index(key), 0, QTableWidgetItem(self.finalData[0][key]))
 			self.setItem(HEADINGS.index(key), 1, QTableWidgetItem(self.finalData[1][key]))
-			self.setItem(HEADINGS.index(key), 2, QTableWidgetItem(self.finalData[2][key]))
+			self.setItem(HEADINGS.index(key), 2, self.finalData[2][key])
 
 	def differenceOfTimes(self, playerTime, wrTime):
 		if wrTime != "" and playerTime != "":
-			return formatTime(self.parseTime(playerTime) - self.parseTime(wrTime))
+			return self.parseTime(playerTime) - self.parseTime(wrTime)
 		else:
 			return ""
 
@@ -87,6 +95,7 @@ class Table(QTableWidget):
 	@staticmethod
 	def getPlayerData(name):
 		r = requests.get(f"https://api.hivemc.com/v1/player/{name}/GRAV")
+		print(r.json())
 		try:
 			return r.json()['maprecords']
 		except KeyError:
@@ -114,9 +123,14 @@ class MainWindow(QMainWindow):
 		self.initUI()
 
 	def initUI(self):
-		table = Table(len(HEADINGS), 3)
-		table.show()
-		self.setCentralWidget(table)
+		self.table = Table(len(HEADINGS), 3)
+		self.table.show()
+		self.setCentralWidget(self.table)
+
+		b1 = QPushButton(self.table)
+		b1.setText("Refresh Stats")
+		b1.clicked.connect(self.refreshClicked)
+		b1.show()
 
 		exitAct = QAction(QIcon('exit.png'), '&Exit', self)
 		exitAct.setShortcut('Ctrl+Q')
@@ -129,25 +143,17 @@ class MainWindow(QMainWindow):
 		fileMenu = menubar.addMenu('&File')
 		fileMenu.addAction(exitAct)
 
-		self.move(300, 150)
-		self.setWindowTitle('PyQt window')
+		self.resize(400, 600)
+		self.setWindowFlags(Qt.Window | Qt.WindowStaysOnTopHint)
+		self.setWindowTitle("HiveMC Gravity Speedrun Tool")
 		self.show()
 
-
-def refreshClicked():
-	global table
-	table.refresh()
+	def refreshClicked(self):
+		self.table.refresh()
 
 
 def main(args):
-	global table
 	app = QApplication(args)
-	# table = Table(len(HEADINGS), 3)
-	# table.show()
-	# b1 = QPushButton(table)
-	# b1.setText("Refresh Stats")
-	# b1.clicked.connect(refreshClicked)
-	# b1.show()
 	_ = MainWindow()
 	sys.exit(app.exec_())
 
